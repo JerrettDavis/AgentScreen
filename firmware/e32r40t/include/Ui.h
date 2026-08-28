@@ -6,14 +6,16 @@
 class Ui {
 public:
     using DecisionHandler = void (*)(bool allow);
+    using RefreshHandler = void (*)();
     explicit Ui(DeviceState& state) : state_(state) {}
-    void begin(DecisionHandler handler);
+    void begin(DecisionHandler decisionHandler, RefreshHandler refreshHandler);
     void refresh();
     void connection(const String& text, bool online);
     void provisioning(const String& ssid, const String& password, const String& address, bool show);
 private:
     DeviceState& state_;
     DecisionHandler decision_ = nullptr;
+    RefreshHandler refreshHandler_ = nullptr;
     lv_obj_t* status_ = nullptr;
     lv_obj_t* activeValue_ = nullptr;
     lv_obj_t* spendValue_ = nullptr;
@@ -49,4 +51,5 @@ private:
     static void backEvent(lv_event_t* event);
     static void setupEvent(lv_event_t* event);
     static void showSetupEvent(lv_event_t* event);
+    static void refreshEvent(lv_event_t* event);
 };

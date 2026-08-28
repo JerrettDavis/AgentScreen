@@ -32,8 +32,9 @@ void metric(lv_obj_t* parent, const char* caption, lv_obj_t** value, int x, int 
 }
 }
 
-void Ui::begin(DecisionHandler handler) {
-    decision_ = handler;
+void Ui::begin(DecisionHandler decisionHandler, RefreshHandler refreshHandler) {
+    decision_ = decisionHandler;
+    refreshHandler_ = refreshHandler;
     lv_obj_set_style_bg_color(lv_scr_act(), color(0x070a11), 0);
     auto* tabs = lv_tabview_create(lv_scr_act(), LV_DIR_BOTTOM, 44);
     lv_obj_set_style_bg_color(tabs, color(0x070a11), 0);
@@ -83,6 +84,7 @@ void Ui::buildSessions(lv_obj_t* parent) {
 void Ui::buildStats(lv_obj_t* parent) {
     lv_obj_set_style_bg_color(parent, color(0x070a11), 0); lv_obj_set_style_pad_all(parent, 10, 0);
     auto* title = label(parent, "Statistics", &lv_font_montserrat_20, 0xf2f5fb); lv_obj_set_pos(title, 3, 0);
+    auto* refreshButton = lv_btn_create(parent); lv_obj_set_size(refreshButton, 92, 34); lv_obj_set_pos(refreshButton, 170, 0); lv_obj_set_style_bg_color(refreshButton, color(0x192235), 0); lv_obj_set_style_border_color(refreshButton, color(0x5ee8c7), 0); lv_obj_set_style_border_width(refreshButton, 1, 0); lv_obj_add_event_cb(refreshButton, refreshEvent, LV_EVENT_CLICKED, this); auto* refreshText = label(refreshButton, "REFRESH NOW", &lv_font_montserrat_10, 0x5ee8c7); lv_obj_center(refreshText);
     statsText_ = label(parent, "Waiting for a snapshot", &lv_font_montserrat_14, 0xd9dfeb); lv_obj_set_size(statsText_, 278, 330); lv_obj_set_pos(statsText_, 3, 47); lv_label_set_long_mode(statsText_, LV_LABEL_LONG_WRAP);
 }
 
@@ -166,3 +168,4 @@ void Ui::sessionEvent(lv_event_t* event) { auto* self = static_cast<Ui*>(lv_even
 void Ui::backEvent(lv_event_t* event) { auto* self = static_cast<Ui*>(lv_event_get_user_data(event)); lv_obj_add_flag(self->detailLayer_, LV_OBJ_FLAG_HIDDEN); }
 void Ui::setupEvent(lv_event_t* event) { auto* self = static_cast<Ui*>(lv_event_get_user_data(event)); lv_obj_add_flag(self->setupLayer_, LV_OBJ_FLAG_HIDDEN); }
 void Ui::showSetupEvent(lv_event_t* event) { auto* self = static_cast<Ui*>(lv_event_get_user_data(event)); lv_obj_clear_flag(self->setupLayer_, LV_OBJ_FLAG_HIDDEN); }
+void Ui::refreshEvent(lv_event_t* event) { auto* self = static_cast<Ui*>(lv_event_get_user_data(event)); if (self->refreshHandler_) self->refreshHandler_(); }

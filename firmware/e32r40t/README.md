@@ -26,6 +26,7 @@ The default upload speed is defined in `platformio.ini`. Use a data-capable USB-
 
 The SoftAP remains enabled in AP+STA mode, so setup can be revisited without erasing normal Wi-Fi configuration.
 Tap the persistent **WIFI** button at the top-right of the display to reopen the setup network details after dismissing them.
+Tap **REFRESH NOW** on the **STATS** tab to request the latest snapshot immediately instead of waiting for the next automatic pull.
 
 ## HTTP endpoints
 

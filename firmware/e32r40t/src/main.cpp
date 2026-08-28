@@ -65,6 +65,7 @@ void touchRead(lv_indev_drv_t*, lv_indev_data_t* data) {
 
 bool applySnapshot(const String& json) {
     if (!state.update(json)) { Serial.printf("Snapshot rejected: %s\n", state.lastError.c_str()); return false; }
+    ui.provisioning(apName, apPassword, WiFi.softAPIP().toString(), false);
     ui.refresh();
     if (txCharacteristic) { txCharacteristic->setValue("ok\n"); txCharacteristic->notify(); }
     return true;
@@ -149,8 +150,10 @@ void beginNetwork() {
     Serial.printf("Direct setup: %s / %s / http://%s\n", apName.c_str(), apPassword.c_str(), WiFi.softAPIP().toString().c_str());
 }
 
-void pullSnapshot() {
-    if (WiFi.status() != WL_CONNECTED || hostUrl.isEmpty() || millis() - lastPull < board::SnapshotIntervalMs) return;
+void pullSnapshot(bool force = false) {
+    if (WiFi.status() != WL_CONNECTED) { if (force) ui.connection("Wi-Fi unavailable", false); return; }
+    if (hostUrl.isEmpty()) { if (force) ui.connection("configure host", false); return; }
+    if (!force && millis() - lastPull < board::SnapshotIntervalMs) return;
     lastPull = millis();
     HTTPClient http; http.setConnectTimeout(1200); http.setTimeout(1800); http.begin(hostUrl + "/api/v1/device/snapshot");
     if (pairingKey.length()) http.addHeader("X-AgentDisplay-Key", pairingKey);
@@ -159,6 +162,7 @@ void pullSnapshot() {
     else if (status > 0) ui.connection("host " + String(status), false);
     http.end();
 }
+void refreshNow() { pullSnapshot(true); }
 void decideGate(bool allow) {
     if (!state.gate.pending || hostUrl.isEmpty()) return;
     HTTPClient http; http.setConnectTimeout(1500); http.setTimeout(2500); http.begin(hostUrl + "/api/v1/gates/" + state.gate.id + "/decision");
@@ -177,7 +181,7 @@ void beginDisplay() {
     lv_init(); lv_disp_draw_buf_init(&drawBuffer, pixels, nullptr, board::ScreenWidth * 24);
     static lv_disp_drv_t display; lv_disp_drv_init(&display); display.hor_res = board::ScreenWidth; display.ver_res = board::ScreenHeight; display.flush_cb = displayFlush; display.draw_buf = &drawBuffer; lv_disp_drv_register(&display);
     static lv_indev_drv_t input; lv_indev_drv_init(&input); input.type = LV_INDEV_TYPE_POINTER; input.read_cb = touchRead; lv_indev_drv_register(&input);
-    ui.begin(decideGate);
+    ui.begin(decideGate, refreshNow);
 }
 }
 
