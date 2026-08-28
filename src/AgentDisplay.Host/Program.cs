@@ -9,6 +9,11 @@ var forceDemo = args.Any(x => x.Equals("--demo", StringComparison.OrdinalIgnoreC
 var filteredArgs = args.Where(x => !x.Equals("--demo", StringComparison.OrdinalIgnoreCase)).ToArray();
 var builder = WebApplication.CreateBuilder(filteredArgs);
 
+// The checked-in configuration intentionally runs the host as Production, even when
+// launched from source. Load referenced-project static web assets explicitly so the
+// Blazor client is available to `dotnet run` as well as to published builds.
+builder.WebHost.UseStaticWebAssets();
+
 builder.Services.Configure<AgentDisplayOptions>(builder.Configuration.GetSection("AgentDisplay"));
 builder.Services.AddSingleton<PricingCatalog>();
 builder.Services.AddSingleton<Redactor>();

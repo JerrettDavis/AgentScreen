@@ -51,7 +51,7 @@ docs/screenshots/            checked desktop, mobile, detail, gate, and device v
 
 Requirements:
 
-- .NET SDK 10.0.400 or a compatible later .NET 10 feature band
+- .NET SDK 10.0.303 or a compatible later .NET 10 feature band (as selected by `global.json`)
 - Node.js 22 for hook installation and tests
 - A current Chromium-based browser
 - PlatformIO only when building or flashing the display

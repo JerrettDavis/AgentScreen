@@ -1,5 +1,15 @@
 # Troubleshooting
 
+## Host or dashboard does not load
+
+Run the host from the repository root with:
+
+```bash
+dotnet run --project src/AgentDisplay.Host -- --demo
+```
+
+Wait for `Now listening on: http://0.0.0.0:5277`, then open `http://127.0.0.1:5277` on the host machine. If startup reports that port 5277 is already in use, stop the older AgentDisplay process before retrying. `/healthz` returning JSON confirms the host API is running; the root page should return the AgentScreen dashboard rather than a 404 response.
+
 ## Bluetooth connection or sync fails
 
 Web Bluetooth requires current Chrome or Edge on a Bluetooth-capable computer and a secure browser context. `http://localhost` is allowed; an unencrypted page opened by LAN IP normally is not.
