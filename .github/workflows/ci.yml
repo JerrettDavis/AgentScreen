@@ -36,7 +36,7 @@ jobs:
       - name: Browser smoke test
         shell: bash
         run: |
-          dotnet artifacts/host/AgentDisplay.Host.dll --demo --urls http://127.0.0.1:5277 > /tmp/agentscreen-host.log 2>&1 &
+          (cd artifacts/host && dotnet AgentDisplay.Host.dll --demo --urls http://127.0.0.1:5277) > /tmp/agentscreen-host.log 2>&1 &
           host_pid=$!
           trap 'kill $host_pid' EXIT
           ready=false
