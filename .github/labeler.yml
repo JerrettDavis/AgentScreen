@@ -1,0 +1,37 @@
+"area: firmware":
+  - changed-files:
+      - any-glob-to-any-file: "firmware/**/*"
+"area: host":
+  - changed-files:
+      - any-glob-to-any-file: "src/AgentDisplay.Host/**/*"
+"area: web":
+  - changed-files:
+      - any-glob-to-any-file: "src/AgentDisplay.Web/**/*"
+"area: core":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/AgentDisplay.Core/**/*"
+          - "src/AgentDisplay.Contracts/**/*"
+"area: integrations":
+  - changed-files:
+      - any-glob-to-any-file: "integrations/**/*"
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**/*"
+          - "*.md"
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "tests/**/*"
+          - "scripts/validate.py"
+          - "requirements-dev.txt"
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ".github/**/*"
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.csproj"
+          - "package.json"
+          - "firmware/**/platformio.ini"

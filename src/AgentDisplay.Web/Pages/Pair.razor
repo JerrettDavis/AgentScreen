@@ -1,0 +1,52 @@
+@page "/pair"
+@inject ApiClient Api
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+<PageTitle>Pair browser · AgentScreen</PageTitle>
+
+<header class="page-header compact">
+    <div><span class="eyebrow">LAN ACCESS</span><h1>Pair this browser</h1><p>AgentScreen is reachable, but this browser is not trusted yet.</p></div>
+</header>
+
+<section class="panel browser-pair-card">
+    <div class="pairing-orbit" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div>
+        <span class="eyebrow">SESSION-SCOPED TRUST</span>
+        <h2>Enter the host pairing key</h2>
+        <p>Copy it from <strong>Devices</strong> on the host machine or from <code>~/.agentdisplay/pairing-key</code>. It is retained only for this browser tab and sent only to this AgentScreen host.</p>
+        <label>Pairing key<input type="password" autocomplete="off" spellcheck="false" @bind="_key" placeholder="Paste the 32-character key" /></label>
+        <div class="button-row"><button class="button primary" @onclick="PairBrowserAsync" disabled="@(_busy || string.IsNullOrWhiteSpace(_key))">@(_busy ? "Checking…" : "Pair browser")</button><a class="button quiet" href="/">Try local access</a></div>
+        @if (!string.IsNullOrWhiteSpace(_message)) { <p class="toast-message @(_error ? "error" : null)">@_message</p> }
+    </div>
+</section>
+
+@code {
+    private string _key = string.Empty;
+    private string? _message;
+    private bool _busy;
+    private bool _error;
+
+    private async Task PairBrowserAsync()
+    {
+        _busy = true;
+        _error = false;
+        _message = null;
+        await JS.InvokeVoidAsync("agentDisplay.setAccessKey", _key);
+        try
+        {
+            var snapshot = await Api.SnapshotAsync();
+            if (snapshot is null) throw new InvalidOperationException("The host returned no dashboard data.");
+            Navigation.NavigateTo("/");
+        }
+        catch
+        {
+            await JS.InvokeVoidAsync("agentDisplay.clearAccessKey");
+            _error = true;
+            _message = "That key was not accepted. Copy the current key from the host and try again.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

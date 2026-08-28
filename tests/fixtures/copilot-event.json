@@ -1,0 +1,1 @@
+{"hookEventName":"preToolUse","sessionId":"copilot-test","cwd":"C:\\src\\AgentDisplay","toolName":"powershell","toolInput":{"command":"Remove-Item ./artifacts -Recurse"},"model":"gpt-5"}

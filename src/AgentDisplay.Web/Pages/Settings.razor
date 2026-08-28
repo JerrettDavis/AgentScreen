@@ -1,0 +1,62 @@
+@page "/settings"
+@inject ApiClient Api
+<PageTitle>Settings · AgentScreen</PageTitle>
+<header class="page-header compact"><div><span class="eyebrow">LOCAL CONFIGURATION</span><h1>Settings</h1><p>Choose agent directories, usage coverage, and hook integrations. Nothing is uploaded.</p></div></header>
+
+@if (!_loaded) { <section class="page-loading"><span></span><p>Reading local settings…</p></section> }
+else
+{
+    <div class="settings-grid">
+        <section class="panel settings-section">
+            <div class="panel-heading"><div><span class="eyebrow">DISCOVERY</span><h2>Agent directories</h2></div><button class="button tiny" @onclick="Rescan">Rescan</button></div>
+            <p>Defaults work for normal installations. Absolute paths remain host-only and are reduced to aliases on the display.</p>
+            <label><span><strong>Claude Code</strong><small>projects/**/*.jsonl</small></span><input @bind="_claudeRoot" /></label>
+            <label><span><strong>OpenAI Codex</strong><small>sessions/**/*.jsonl</small></span><input @bind="_codexRoot" /></label>
+            <label><span><strong>GitHub Copilot CLI</strong><small>session-state/*/events.jsonl</small></span><input @bind="_copilotRoot" /></label>
+            <label class="toggle-row"><span><strong>Claude OAuth usage</strong><small>Read the local token on the host to retrieve reported 5h/7d windows.</small></span><input type="checkbox" @bind="_enableClaudeUsage" /></label>
+            <button class="button primary" @onclick="Save" disabled="@_busy">Save settings</button>
+        </section>
+
+        <section class="panel settings-section">
+            <div class="panel-heading"><div><span class="eyebrow">BEHAVIOR GATES</span><h2>Provider hooks</h2></div></div>
+            <p>The installer merges lifecycle hooks into existing configuration and creates timestamped backups before applying changes.</p>
+            <div class="hook-grid">
+                @foreach (var provider in Enum.GetValues<AgentProvider>())
+                {
+                    <article><span class="provider-glyph">@(provider == AgentProvider.Claude ? "A" : provider == AgentProvider.Codex ? "◎" : "◆")</span><div><strong>@ProviderLabel(provider)</strong><small>Session and tool lifecycle</small></div><button class="button tiny" @onclick="() => Install(provider, true)">Preview</button><button class="button tiny primary" @onclick="() => Install(provider, false)">Install</button></article>
+                }
+            </div>
+            <div class="safety-note"><strong>Fail-open by default</strong><p>A disconnected dashboard does not strand an agent indefinitely. Strict fail-closed behavior is an explicit host setting.</p></div>
+        </section>
+    </div>
+    @if (_installResults.Count > 0)
+    {
+        <section class="panel install-results"><div class="panel-heading"><div><span class="eyebrow">INSTALLER RESULT</span><h2>Hook configuration</h2></div></div>@foreach (var result in _installResults) { <div class="result-row"><span class="status-chip @(result.Changed ? "good" : "muted")">@(result.DryRun ? "preview" : result.Changed ? "updated" : "unchanged")</span><div><strong>@result.Provider · @result.Path</strong><small>@result.Message</small></div></div> }
+        </section>
+    }
+    @if (!string.IsNullOrWhiteSpace(_message)) { <p class="toast-message @(_error ? "error" : null)">@_message</p> }
+}
+
+@code {
+    private bool _loaded, _busy, _error, _enableClaudeUsage;
+    private string _claudeRoot = "~/.claude", _codexRoot = "~/.codex", _copilotRoot = "~/.copilot";
+    private string? _message;
+    private IReadOnlyList<HookInstallResult> _installResults = [];
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await Api.SettingsAsync();
+        if (settings.TryGetProperty("roots", out var roots))
+        {
+            _claudeRoot = roots.GetProperty("Claude").GetString() ?? _claudeRoot;
+            _codexRoot = roots.GetProperty("Codex").GetString() ?? _codexRoot;
+            _copilotRoot = roots.GetProperty("Copilot").GetString() ?? _copilotRoot;
+        }
+        _enableClaudeUsage = settings.TryGetProperty("enableClaudeUsage", out var enabled) && enabled.GetBoolean();
+        _loaded = true;
+    }
+    private async Task Save() => await Run(async () => { await Api.UpdateSettingsAsync(new() { ["Claude"] = _claudeRoot, ["Codex"] = _codexRoot, ["Copilot"] = _copilotRoot }, _enableClaudeUsage, null); await Api.RescanAsync(); _message = "Settings saved and directories rescanned."; });
+    private async Task Rescan() => await Run(async () => { await Api.RescanAsync(); _message = "Directory scan completed."; });
+    private async Task Install(AgentProvider provider, bool dryRun) => await Run(async () => { _installResults = await Api.InstallHooksAsync(provider, dryRun); _message = dryRun ? "Dry-run complete. No files were changed." : "Hook installer complete."; });
+    private static string ProviderLabel(AgentProvider provider) => provider == AgentProvider.Copilot ? "GitHub Copilot" : provider.ToString();
+    private async Task Run(Func<Task> action) { _busy = true; _error = false; try { await action(); } catch (Exception ex) { _message = ex.Message; _error = true; } finally { _busy = false; } }
+}

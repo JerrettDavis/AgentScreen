@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AgentScreen visual fixture</title>
+  <link rel="stylesheet" href="/src/AgentDisplay.Web/wwwroot/css/app.css">
+  <style>
+    body.preview { min-height: 100vh; }
+    .preview .desktop-nav a[data-view].active { pointer-events: none; }
+    .preview-note { position: fixed; right: 14px; top: 12px; z-index: 50; padding: 5px 8px; border-radius: 999px; border: 1px solid rgba(158,174,207,.13); color: #59657c; background: rgba(7,10,17,.75); font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+    .device-capture { width: 320px; height: 480px; overflow: hidden; padding: 18px 14px 0; background: radial-gradient(circle at 76% -4%, rgba(91,111,205,.22), transparent 42%), #070a11; color: #f2f5fb; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    .device-capture * { box-sizing: border-box; }
+    .dc-head { display:flex; justify-content:space-between; align-items:flex-start; }
+    .dc-head h1 { margin:2px 0 0; font-size:22px; letter-spacing:-.055em; }
+    .dc-head small { color:#5ee8c7; font-size:8px; font-weight:800; letter-spacing:.14em; }
+    .dc-status { margin-top:6px; color:#5ee8c7; font-size:8px; }
+    .dc-metrics { display:grid; grid-template-columns:.7fr 1fr 1fr; gap:7px; margin:17px 0 8px; }
+    .dc-card { min-height:66px; padding:10px; border:1px solid #243149; border-radius:12px; background:#111827; }
+    .dc-card span { display:block; color:#7e8ca5; font-size:8px; font-weight:700; letter-spacing:.08em; }
+    .dc-card strong { display:block; margin-top:8px; font-size:19px; letter-spacing:-.03em; }
+    .dc-provider { padding:10px; border:1px solid #243149; border-radius:12px; background:#111827; }
+    .dc-provider > small { color:#7e8ca5; font-size:8px; font-weight:800; letter-spacing:.11em; }
+    .dc-provider-row { display:grid; grid-template-columns:58px 1fr 34px; gap:7px; align-items:center; margin-top:10px; font-size:9px; }
+    .dc-provider-row b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .dc-provider-row em { height:5px; overflow:hidden; border-radius:8px; background:#263044; }
+    .dc-provider-row em i { display:block; height:100%; border-radius:8px; background:#5ee8c7; }
+    .dc-provider-row:nth-of-type(3) em i { background:#8da2ff; }
+    .dc-provider-row:nth-of-type(4) em i { background:#5fc6ff; }
+    .dc-provider-row span { color:#5ee8c7; text-align:right; font-weight:800; }
+    .dc-section { margin:15px 2px 6px; color:#7e8ca5; font-size:8px; font-weight:800; letter-spacing:.11em; }
+    .dc-session { display:grid; grid-template-columns:6px 1fr auto; gap:8px; align-items:center; min-height:49px; padding:8px 10px; margin-bottom:6px; border:1px solid #243149; border-radius:10px; background:#111827; }
+    .dc-session > i { width:6px; height:6px; border-radius:50%; background:#5ee8c7; box-shadow:0 0 8px rgba(94,232,199,.8); }
+    .dc-session:nth-of-type(3) > i { background:#8da2ff; box-shadow:0 0 8px rgba(141,162,255,.8); }
+    .dc-session strong,.dc-session small { display:block; }
+    .dc-session strong { font-size:10px; }
+    .dc-session small { color:#7e8ca5; font-size:8px; margin-top:3px; }
+    .dc-session > span { color:#5ee8c7; font-size:8px; font-weight:800; }
+    .dc-tabs { position:absolute; left:0; right:0; bottom:0; height:44px; display:grid; grid-template-columns:repeat(3,1fr); align-items:center; background:#0d1421; border-top:1px solid #243149; color:#8491a8; text-align:center; font-size:8px; font-weight:800; }
+    .dc-tabs b { color:#5ee8c7; }
+    .device-only { margin:0; width:320px; height:480px; overflow:hidden; background:#070a11; }
+    .device-only .preview-note { display:none; }
+    @media (max-width: 820px) { .preview-note { display:none; } }
+  </style>
+</head>
+<body class="preview">
+  <div id="root"></div>
+<script>
+const qs = new URLSearchParams(location.search);
+const view = qs.get('view') || 'dashboard';
+const root = document.getElementById('root');
+
+const brand = `<a class="brand" href="#"><span class="brand-mark"><i></i><i></i><i></i></span><span><strong>Agent</strong>Screen<small>local operations console</small></span></a>`;
+const nav = `<nav class="desktop-nav"><a data-view="dashboard"><span>⌁</span>Overview</a><a data-view="session"><span>◫</span>Sessions</a><a data-view="approval"><span>◇</span>Approvals</a><a><span>▣</span>Devices</a><a><span>⚙</span>Settings</a></nav>`;
+const mobile = `<nav class="mobile-nav"><a class="${view==='dashboard'?'active':''}"><span>⌁</span><small>Overview</small></a><a class="${view==='session'?'active':''}"><span>◫</span><small>Sessions</small></a><a class="${view==='approval'?'active':''}"><span>◇</span><small>Gates</small></a><a><span>▣</span><small>Devices</small></a><a><span>⚙</span><small>Settings</small></a></nav>`;
+function shell(content) {
+  root.innerHTML = `<span class="preview-note">deterministic visual fixture</span><div class="app-shell"><aside class="sidebar">${brand}${nav}<div class="local-note"><span class="pulse-dot"></span><div><strong>Local relay</strong><small>Secrets stay on this machine</small></div></div></aside><main class="page-shell">${content}</main>${mobile}</div>`;
+  document.querySelectorAll('.desktop-nav a[data-view]').forEach(a => a.classList.toggle('active', a.dataset.view === view));
+}
+const provider = (cls,glyph,name,status,pct,label,rows,tokens,cost) => `<article class="provider-card ${cls}"><div class="provider-heading"><span class="provider-glyph">${glyph}</span><div><h2>${name}</h2><p>${status}</p></div><span class="status-chip good">connected</span></div><div class="provider-usage"><div class="usage-ring" style="--p:${pct}"><strong>${pct}<small>%</small></strong><span>${label}</span></div><div class="window-list">${rows.map(r=>`<div><span>${r[0]}</span><strong>${r[1]}%</strong><small>${r[2]}</small></div>`).join('')}</div></div><footer><span>${tokens} observed tokens</span><strong>${cost}</strong><small>API-equivalent</small></footer></article>`;
+const sessions = [
+ ['claude','AgentDisplay','primary · claude-sonnet-5','Active','just now','204K','$0.084'],
+ ['codex','AgentDisplay','reviewer · gpt-5.3-codex','Active','7m ago','49.2K','$0.057'],
+ ['copilot','AgentDisplay.Web','frontend · gpt-5','Waiting','10m ago','29.6K','$0.026'],
+ ['claude','E32R40T','firmware · claude-sonnet-4.6','Idle','3h ago','76.8K','$0.082']
+];
+function dashboard() { return `<header class="page-header"><div><span class="eyebrow">DEMO DATA · READY TO CONNECT</span><h1>Your agents, at a glance.</h1><p>3 active across 3 projects. Detailed data stays on JDH-WORKSTATION.</p></div><div class="header-actions"><span class="sync-state"><i></i>Updated just now</span><a class="button quiet">Pair display</a></div></header><section class="provider-grid">${provider('claude','A','Claude','OAuth usage connected',68,'5 hour',[['5 hour','68','resets in 2.1h · $1.42 overage'],['7 day','43','resets Aug 31, 10:24 AM']], '281K','$0.166')}${provider('codex','◎','OpenAI Codex','Local transcript estimate',31,'5 hour est.',[['5 hour est.','31','observed local activity']], '49.2K','$0.057')}${provider('copilot','◆','GitHub Copilot','Local session-state',19,'observed',[['observed','19','not an entitlement window']], '29.6K','$0.026')}</section><section class="metric-strip"><article><span>Burn rate</span><strong>$0.047<small>/ min</small></strong><p>$2.84 per active hour</p></article><article><span>Estimated spend</span><strong>$0.33</strong><p>$6.62 by exhaustion</p></article><article><span>Cache hit rate</span><strong>92.8<small>%</small></strong><p>240K cached · 1 break</p></article><article><span>Projected exhaustion</span><strong class="time-value">2:53 PM</strong><p>Linear projection from the most constrained window</p></article></section><div class="content-grid"><section class="panel sessions-panel"><div class="panel-heading"><div><span class="eyebrow">LIVE WORK</span><h2>Sessions</h2></div><a>View all</a></div><div class="session-list">${sessions.map(s=>`<a class="session-row"><span class="provider-dot ${s[0]}"></span><div class="session-main"><strong>${s[1]}</strong><span>${s[2]}</span></div><div class="session-activity"><span class="state ${s[3].toLowerCase()}">${s[3]}</span><small>${s[4]}</small></div><div class="session-numbers"><strong>${s[5]}</strong><small>${s[6]}</small></div><span class="chevron">›</span></a>`).join('')}</div></section><section class="panel pulse-panel"><div class="panel-heading"><div><span class="eyebrow">SYSTEM PULSE</span><h2>Today</h2></div><span class="tiny-live"><i></i>live</span></div><div class="pulse-chart">${[28,34,24,48,69,44,78,61,88,57,73,49].map(h=>`<span style="--h:${h}%"></span>`).join('')}</div><div class="pulse-facts"><div><span>Sessions</span><strong>4</strong></div><div><span>Agents</span><strong>4</strong></div><div><span>Projects</span><strong>3</strong></div><div><span>Pending gates</span><strong>1</strong></div></div></section></div><aside class="gate-banner"><div class="gate-icon">!</div><div><span class="eyebrow">APPROVAL REQUIRED · CLAUDE</span><h3>AgentDisplay wants to run Bash</h3><code>npm publish --access public</code><p>Publishing or deployment requires approval</p></div><div class="gate-actions"><button class="button danger">Deny</button><button class="button primary">Allow once</button><small>82s remaining</small></div></aside>`; }
+function session() { const turns=[['assistant','A','Assistant','','12:38:04 PM','Added the compact display snapshot and approval queue.','52.1K tokens · 49K cache · $0.0304'],['tool','›_','Tool','Bash','12:22:19 PM','dotnet test AgentDisplay.slnx','49.3K tokens · 48.5K cache · $0.0089'],['assistant','A','Assistant','','12:09:41 PM','Mapped the host, PWA, and display trust boundaries.','50.9K tokens · 47.9K cache · $0.0261'],['user','U','User','','12:06:13 PM','Implement the device pairing flow and keep credentials on the host.','51.8K tokens · 48.1K cache · $0.0187']]; return `<header class="page-header compact session-detail-head"><div><button class="back-link">‹ Sessions</button><span class="eyebrow">CLAUDE · ACTIVE</span><h1>AgentDisplay</h1><p>primary · claude-sonnet-5 · started Aug 27, 11:42 AM</p></div><div class="session-total"><span>API-equivalent</span><strong>$0.084</strong><small>204K observed tokens</small></div></header><section class="detail-stats"><article><span>Input</span><strong>5.2K</strong></article><article><span>Output</span><strong>4.2K</strong></article><article><span>Cache read</span><strong>194K</strong></article><article><span>Cache write</span><strong>1.2K</strong></article></section><section class="panel timeline-panel"><div class="panel-heading"><div><span class="eyebrow">REDACTED LOCAL VIEW</span><h2>Turn timeline</h2></div><span>4 turns</span></div><div class="timeline">${turns.map(t=>`<article class="turn ${t[0]}"><span class="turn-mark">${t[1]}</span><div class="turn-body"><header><strong>${t[2]}</strong>${t[3]?`<code>${t[3]}</code>`:''}<time>${t[4]}</time></header><p>${t[5]}</p><footer><span>${t[6].split(' · ')[0]}</span><span>${t[6].split(' · ')[1]}</span><span>${t[6].split(' · ')[2]}</span></footer></div></article>`).join('')}</div></section>`; }
+function approval() { return `<header class="page-header compact"><div><span class="eyebrow">DETERMINISTIC POLICY GATES</span><h1>Approvals</h1><p>Review sensitive operations without exposing full transcripts to the display.</p></div></header><article class="approval-card"><header><div class="gate-icon">!</div><div><span class="eyebrow">CLAUDE · AGENTDISPLAY</span><h2>Bash needs approval</h2></div><span class="countdown">82s</span></header><div class="approval-command"><span>Redacted request</span><code>npm publish --access public</code></div><p class="approval-reason">Publishing or deployment requires approval</p><footer><div><small>Session</small><strong>claude-agentdisplay</strong></div><div><small>Received</small><strong>12:41:42 PM</strong></div><div class="approval-actions"><button class="button danger">Deny</button><button class="button primary">Allow once</button></div></footer></article><section class="panel history-panel"><div class="panel-heading"><div><span class="eyebrow">LAST 24 HOURS</span><h2>Decision history</h2></div></div><div class="history-row"><span class="history-state allowed">Allowed</span><div><strong>E32R40T · Bash</strong><small>pio run -e e32r40t -t upload</small></div><time>11:54 AM</time></div><div class="history-row"><span class="history-state denied">Denied</span><div><strong>AgentDisplay · shell</strong><small>curl [redacted external target] --data @[redacted path]</small></div><time>10:18 AM</time></div><div class="history-row"><span class="history-state allowed">Allowed</span><div><strong>AgentDisplay.Web · PowerShell</strong><small>dotnet test AgentDisplay.slnx</small></div><time>9:47 AM</time></div></section>`; }
+function device() { document.body.className='device-only'; root.innerHTML=`<main class="device-capture"><div class="dc-head"><div><small>LOCAL AGENT OPERATIONS</small><h1>AgentDisplay</h1></div><span class="dc-status">10.0.0.84</span></div><section class="dc-metrics"><div class="dc-card"><span>ACTIVE</span><strong>3</strong></div><div class="dc-card"><span>SPEND</span><strong>$0.33</strong></div><div class="dc-card"><span>COST / HR</span><strong>$2.84</strong></div></section><section class="dc-provider"><small>USAGE WINDOWS</small><div class="dc-provider-row"><b>Claude</b><em><i style="width:68%"></i></em><span>68%</span></div><div class="dc-provider-row"><b>Codex</b><em><i style="width:31%"></i></em><span>31%</span></div><div class="dc-provider-row"><b>Copilot</b><em><i style="width:19%"></i></em><span>19%</span></div></section><div class="dc-section">RECENT SESSIONS</div><div class="dc-session"><i></i><div><strong>AgentDisplay</strong><small>Claude / Active</small></div><span>204k&nbsp; $0.08</span></div><div class="dc-session"><i></i><div><strong>Parser review</strong><small>Codex / Active</small></div><span>49k&nbsp; $0.06</span></div><div class="dc-tabs"><b>OVERVIEW</b><span>SESSIONS</span><span>STATS</span></div></main>`; }
+if (view === 'device') device(); else shell(view === 'session' ? session() : view === 'approval' ? approval() : dashboard());
+</script>
+</body>
+</html>

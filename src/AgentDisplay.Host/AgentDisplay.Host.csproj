@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>AgentDisplay.Host</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../AgentDisplay.Contracts/AgentDisplay.Contracts.csproj" />
+    <ProjectReference Include="../AgentDisplay.Core/AgentDisplay.Core.csproj" />
+    <ProjectReference Include="../AgentDisplay.Web/AgentDisplay.Web.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.11" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="../../integrations/hooks/**" Link="integrations/hooks/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

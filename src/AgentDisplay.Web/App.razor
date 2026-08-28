@@ -1,0 +1,17 @@
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found · AgentScreen</PageTitle>
+        <LayoutView Layout="@typeof(Layout.MainLayout)">
+            <section class="empty-state">
+                <span class="eyebrow">404</span>
+                <h1>That view is not here.</h1>
+                <p>Return to the live operations dashboard.</p>
+                <a class="button primary" href="/">Open dashboard</a>
+            </section>
+        </LayoutView>
+    </NotFound>
+</Router>

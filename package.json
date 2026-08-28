@@ -1,0 +1,11 @@
+{
+  "name": "agentscreen-repository-tools",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/js/*.test.mjs",
+    "screenshots": "node scripts/capture-screenshots.mjs",
+    "validate": "python3 scripts/validate.py"
+  }
+}

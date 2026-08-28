@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose an AgentScreen capability or improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow or limitation should AgentScreen address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: areas
+    attributes:
+      label: Areas affected
+      options:
+        - label: Firmware or physical display
+        - label: Host or provider collector
+        - label: Web dashboard or browser bridge
+        - label: Hooks, approvals, or security boundary
+        - label: Documentation or developer tooling

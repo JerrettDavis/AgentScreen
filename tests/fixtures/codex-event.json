@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","session_id":"codex-test","cwd":"/work/AgentDisplay","tool_name":"shell","tool_input":{"command":"npm publish --access public"},"model":"gpt-5.3-codex"}

@@ -1,0 +1,52 @@
+name: Bug report
+description: Report a problem with the host, PWA, integrations, or display firmware.
+labels: [bug]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [ESP32 firmware/display, Bluetooth or Wi-Fi sync, Web dashboard, Host and provider data, Agent hooks and approvals, Build or CI]
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happened?
+      description: Describe the behavior without including prompts, transcripts, credentials, pairing keys, or private paths.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start the host with ...
+        2. Connect using ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: OS, browser/version, board revision, connection type, commit or release
+  - type: textarea
+    id: redacted-logs
+    attributes:
+      label: Redacted logs
+      description: Remove secrets, session content, usernames, and absolute paths.
+      render: text
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed credentials, pairing keys, transcripts, prompts, and private paths.
+          required: true

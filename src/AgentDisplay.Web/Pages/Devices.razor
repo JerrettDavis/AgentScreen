@@ -1,0 +1,125 @@
+@page "/devices"
+@inject ApiClient Api
+@inject IJSRuntime JS
+@inject DisplaySyncService Sync
+@inject NavigationManager Navigation
+@implements IDisposable
+<PageTitle>Devices · AgentScreen</PageTitle>
+@if (_connectionStatus is not null)
+{
+    <div class="connection-loader" role="status" aria-live="polite" aria-busy="true">
+        <div class="connection-loader-card">
+            <div class="connection-loader-orbit"><span></span><span></span><span></span></div>
+            <span class="eyebrow">AGENTDISPLAY BLUETOOTH</span>
+            <h2>@_connectionStatus</h2>
+            <p>Keep this tab open while the secure local snapshot is transferred.</p>
+        </div>
+    </div>
+}
+<header class="page-header compact"><div><span class="eyebrow">E32R40T COMPANION</span><h1>Devices</h1><p>Pair the physical dashboard over normal Wi-Fi, direct SoftAP, or browser-mediated Bluetooth.</p></div></header>
+
+<section class="device-layout">
+    <div class="device-frame" aria-label="AgentDisplay screen preview">
+        <div class="device-bezel"><div class="device-screen">
+            <header><div><small>AGENTDISPLAY</small><strong>Operations</strong></div><span>12:42</span></header>
+            <div class="mini-usage"><div class="mini-ring"><strong>68%</strong><small>5 hour</small></div><div><span>ACTIVE</span><strong>3</strong><small>sessions</small></div><div><span>BURN</span><strong>$2.84</strong><small>per hour</small></div></div>
+            <div class="mini-session"><i></i><div><strong>AgentDisplay</strong><small>Claude · primary</small></div><span>LIVE</span></div>
+            <div class="mini-session"><i class="codex"></i><div><strong>Parser review</strong><small>Codex · reviewer</small></div><span>LIVE</span></div>
+            <div class="mini-gate"><strong>Approval needed</strong><span>npm publish --access public</span><div><b>DENY</b><b>ALLOW</b></div></div>
+        </div></div>
+        <small>320 × 480 portrait · E32R40T</small>
+    </div>
+
+    <div class="connection-stack">
+        <article class="panel sync-control-card">
+            <div><span class="eyebrow">LIVE DISPLAY DATA</span><h2>Update stats automatically</h2><p>Send the latest compact snapshot when the display connects, then refresh it on your preferred schedule.</p></div>
+            <div class="sync-options">
+                <label class="interval-field">Refresh every<select @bind="_autoUpdateInterval" @bind:after="AutoUpdateIntervalChanged" disabled="@(_busy || !_autoUpdate)"><option value="30">30 seconds</option><option value="60">1 minute</option><option value="300">5 minutes</option><option value="900">15 minutes</option></select></label>
+                <label class="toggle-row"><span><strong>@(Sync.AutoUpdate ? "Auto-update on" : "Auto-update off")</strong><small>@SyncStatus()</small></span><input type="checkbox" @bind="_autoUpdate" @bind:after="AutoUpdateChanged" /></label>
+            </div>
+        </article>
+        <article class="panel connection-card">
+            <div class="connection-icon">⌁</div><div><span class="eyebrow">RECOMMENDED</span><h2>Normal Wi-Fi</h2><p>The display joins your network and pulls a compact authenticated snapshot from the host.</p></div>
+            <label>Device URL<input @bind="_deviceUrl" placeholder="http://agentdisplay.local" /></label>
+            <button class="button primary" @onclick="ConnectLan" disabled="@_busy">@(Sync.Connected && Sync.ConnectionName == "LAN" ? "Push now" : "Connect & sync")</button>
+        </article>
+        <article class="panel connection-card">
+            <div class="connection-icon">◉</div><div><span class="eyebrow">NO ROUTER REQUIRED</span><h2>Direct SoftAP</h2><p>Join <code>AgentDisplay-XXXX</code>, then push to the device at <code>192.168.4.1</code>.</p></div>
+            <button class="button quiet" @onclick="UseSoftAp">Use direct address</button>
+        </article>
+        <article class="panel connection-card">
+            <div class="connection-icon">ᛒ</div><div><span class="eyebrow">BROWSER BRIDGE</span><h2>Web Bluetooth</h2><p>The PWA writes the same redacted snapshot through a chunked BLE characteristic.</p></div>
+            <div class="button-row"><button class="button quiet" @onclick="ConnectBle" disabled="@_busy">@(Sync.BleConnected ? "Connected" : Sync.LastError is not null ? "Retry connection" : "Connect")</button><button class="button primary" @onclick="PushNow" disabled="@(!Sync.BleConnected || _busy)">Push now</button></div>
+        </article>
+        @if (!string.IsNullOrWhiteSpace(_message)) { <p class="toast-message @(_error ? "error" : null)">@_message</p> }
+    </div>
+</section>
+
+@if (_pairing is not null)
+{
+    <section class="panel pairing-panel">
+        <div><span class="eyebrow">HOST PAIRING</span><h2>Local relay credentials</h2><p>Enter these once on the device setup page. Choose the address reachable from the display. The key stays outside display screenshots and telemetry.</p><div class="button-row"><button class="button tiny" @onclick="CopyHost">Copy host URL</button><button class="button tiny primary" @onclick="CopyKey">Copy pairing key</button></div></div>
+        <dl><dt>Preferred host URL</dt><dd>@_pairing.HostUrl</dd><dt>Other detected addresses</dt><dd>@string.Join(" · ", _pairing.HostCandidates.Skip(1))</dd><dt>Pairing key</dt><dd class="secret-value">@Mask(_pairing.PairingKey)</dd><dt>BLE service</dt><dd>@_pairing.BluetoothServiceUuid</dd></dl>
+    </section>
+}
+
+@code {
+    private DevicePairing? _pairing;
+    private string _deviceUrl = "http://agentdisplay.local";
+    private bool _autoUpdate = true;
+    private int _autoUpdateInterval = 30;
+    private bool _busy;
+    private bool _error;
+    private string? _message;
+    private string? _connectionStatus;
+    protected override async Task OnInitializedAsync()
+    {
+        Sync.Changed += SyncChanged;
+        await Sync.InitializeAsync();
+        _autoUpdate = Sync.AutoUpdate;
+        _autoUpdateInterval = Sync.AutoUpdateIntervalSeconds;
+        _pairing = await Api.PairingAsync();
+    }
+    private void UseSoftAp() { _deviceUrl = "http://192.168.4.1"; _message = "Direct SoftAP address selected."; _error = false; }
+    private async Task ConnectLan() => await Run(async () => { if (Sync.Connected && Sync.ConnectionName == "LAN") await Sync.PushNowAsync(); else await Sync.ConnectLanAsync(_deviceUrl); _message = Sync.AutoUpdate ? $"Display connected; stats will refresh {IntervalText()}." : "Snapshot delivered to the display."; });
+    private async Task ConnectBle() => await Run(async () =>
+    {
+        if (_pairing is null) return;
+        _connectionStatus = "Starting Bluetooth connection…";
+        await InvokeAsync(StateHasChanged);
+        await Sync.ConnectBleAsync(_pairing, status => { _connectionStatus = status; _ = InvokeAsync(StateHasChanged); });
+        if (Sync.AutoUpdate)
+        {
+            await Task.Delay(450);
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            _connectionStatus = null;
+            _message = "Bluetooth display connected. Auto-update is off; use Push now to sync.";
+        }
+    });
+    private async Task PushNow() => await Run(async () =>
+    {
+        if (Sync.BleConnected) { _connectionStatus = "Syncing current stats to the display…"; await InvokeAsync(StateHasChanged); }
+        await Sync.PushNowAsync();
+        if (Sync.BleConnected)
+        {
+            _connectionStatus = "Stats synced. Opening dashboard…";
+            await InvokeAsync(StateHasChanged);
+            await Task.Delay(450);
+            Navigation.NavigateTo("/");
+        }
+        else _message = "Current stats sent to the display.";
+    });
+    private async Task AutoUpdateChanged() => await Run(async () => { await Sync.SetAutoUpdateAsync(_autoUpdate); _message = _autoUpdate ? "Automatic display updates enabled." : "Automatic display updates paused."; });
+    private async Task AutoUpdateIntervalChanged() => await Run(async () => { await Sync.SetAutoUpdateIntervalAsync(_autoUpdateInterval); _message = $"Automatic display updates will run {IntervalText()}."; });
+    private async Task CopyHost() { if (_pairing is not null) { await JS.InvokeVoidAsync("agentDisplay.copyText", _pairing.HostUrl); _message = "Host URL copied."; } }
+    private async Task CopyKey() { if (_pairing is not null) { await JS.InvokeVoidAsync("agentDisplay.copyText", _pairing.PairingKey); _message = "Pairing key copied."; } }
+    private async Task Run(Func<Task> action) { _busy = true; _error = false; try { await action(); } catch (Exception ex) { _connectionStatus = null; _message = string.IsNullOrWhiteSpace(ex.Message) ? "The operation failed. Retry, and reset the display if the problem continues." : ex.Message; _error = true; } finally { _busy = false; } }
+    private string SyncStatus() => Sync.LastError is not null ? $"Update failed: {Sync.LastError}" : Sync.LastUpdatedAt is { } at ? $"{Sync.ConnectionName} · last sent {at.ToLocalTime():h:mm:ss tt} · {IntervalText()}" : $"Starts after connection · {IntervalText()}";
+    private string IntervalText() => _autoUpdateInterval switch { 30 => "every 30 seconds", 60 => "every minute", 300 => "every 5 minutes", 900 => "every 15 minutes", _ => $"every {_autoUpdateInterval} seconds" };
+    private void SyncChanged() => _ = InvokeAsync(StateHasChanged);
+    public void Dispose() => Sync.Changed -= SyncChanged;
+    private static string Mask(string value) => value.Length < 12 ? "••••••••" : value[..4] + "••••••••••••" + value[^4..];
+}

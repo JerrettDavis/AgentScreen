@@ -1,0 +1,31 @@
+@page "/sessions"
+@inject ApiClient Api
+<PageTitle>Sessions · AgentScreen</PageTitle>
+<header class="page-header compact"><div><span class="eyebrow">LOCAL ACTIVITY</span><h1>Sessions</h1><p>Normalized work across every connected coding agent.</p></div></header>
+@if (_snapshot is null) { <section class="page-loading"><span></span><p>Loading sessions…</p></section> }
+else
+{
+    <section class="filter-row">
+        <button class="filter @(_provider is null ? "active" : null)" @onclick="() => _provider = null">All @_snapshot.Sessions.Count</button>
+        @foreach (var provider in Enum.GetValues<AgentProvider>()) { <button class="filter @(_provider == provider ? "active" : null)" @onclick="() => _provider = provider">@provider @_snapshot.Sessions.Count(x => x.Provider == provider)</button> }
+    </section>
+    <section class="panel table-panel">
+        <div class="session-table-head"><span>Session</span><span>State</span><span>Tokens</span><span>Est. cost</span><span>Last turn</span><span></span></div>
+        @foreach (var session in _snapshot.Sessions.Where(x => _provider is null || x.Provider == _provider))
+        {
+            <a class="session-table-row" href="@($"/sessions/{Uri.EscapeDataString(session.Id)}")">
+                <span class="session-title"><i class="provider-dot @session.Provider.ToString().ToLowerInvariant()"></i><strong>@session.ProjectAlias</strong><small>@session.Provider · @session.Agent · @session.Model</small></span>
+                <span><b class="state @session.State.ToString().ToLowerInvariant()">@session.State</b></span>
+                <span><strong>@DisplayFormat.Compact(session.Tokens.Total)</strong><small>@DisplayFormat.Compact(session.Tokens.CacheRead) cached</small></span>
+                <span><strong title="@DisplayFormat.Money(session.EstimatedCostUsd, 3)">@DisplayFormat.Money(session.EstimatedCostUsd, 3)</strong><small>API-equivalent</small></span>
+                <span><strong>@session.LastActivityAt.ToLocalTime().ToString("h:mm tt")</strong><small>@session.LastActivityAt.ToLocalTime().ToString("MMM d")</small></span>
+                <span class="chevron">›</span>
+            </a>
+        }
+    </section>
+}
+@code {
+    private DashboardSnapshot? _snapshot;
+    private AgentProvider? _provider;
+    protected override async Task OnInitializedAsync() => _snapshot = await Api.SnapshotAsync();
+}

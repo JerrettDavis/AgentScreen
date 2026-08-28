@@ -1,0 +1,146 @@
+@page "/"
+@implements IAsyncDisposable
+@inject ApiClient Api
+<PageTitle>Overview · AgentScreen</PageTitle>
+
+@if (_snapshot is null)
+{
+    <section class="page-loading"><span></span><p>Reading local agent activity…</p></section>
+}
+else
+{
+    <header class="page-header">
+        <div>
+            <span class="eyebrow">@(_snapshot.DemoMode ? "DEMO DATA · READY TO CONNECT" : "LIVE · LOCAL RELAY")</span>
+            <h1>Your agents, at a glance.</h1>
+            <p>@DisplayFormat.Number(_snapshot.Stats.ActiveSessions) active across @DisplayFormat.Number(_snapshot.Stats.ProjectCount) projects. Detailed data stays on @_snapshot.HostName.</p>
+        </div>
+        <div class="header-actions">
+            <span class="sync-state"><i></i>Updated @Ago(_snapshot.GeneratedAt)</span>
+            <a class="button quiet" href="/devices">Pair display</a>
+        </div>
+    </header>
+
+    <section class="provider-grid" aria-label="Provider usage">
+        @foreach (var provider in _snapshot.Providers)
+        {
+            var window = provider.Windows.FirstOrDefault();
+            var percent = window?.UsedPercent ?? 0;
+            <article class="provider-card @provider.Provider.ToString().ToLowerInvariant()">
+                <div class="provider-heading">
+                    <span class="provider-glyph">@ProviderGlyph(provider.Provider)</span>
+                    <div><h2>@ProviderName(provider.Provider)</h2><p>@provider.Status</p></div>
+                    <span class="status-chip @(provider.Connected ? "good" : "muted")">@(provider.Connected ? "connected" : "quiet")</span>
+                </div>
+                <div class="provider-usage">
+                    <div class="usage-ring" style="@($"--p:{percent:0.#}")">
+                        <strong>@DisplayFormat.Number(percent)<small>%</small></strong>
+                        <span>@(window?.Label ?? "observed")</span>
+                    </div>
+                    <div class="window-list">
+                        @if (provider.Windows.Count == 0)
+                        {
+                            <div><span>No reported window</span><strong>—</strong></div>
+                        }
+                        @foreach (var item in provider.Windows.Take(4))
+                        {
+                            <div><span>@item.Label</span><strong>@DisplayFormat.Number(item.UsedPercent)%</strong><small>@ResetText(item)</small></div>
+                        }
+                    </div>
+                </div>
+                <footer><span>@DisplayFormat.Compact(provider.ObservedTokens.Total) observed tokens</span><strong title="@DisplayFormat.Money(provider.EstimatedCostUsd)">@DisplayFormat.Money(provider.EstimatedCostUsd)</strong><small>API-equivalent</small></footer>
+            </article>
+        }
+    </section>
+
+    <section class="metric-strip">
+        <article><span>Burn rate</span><strong title="@DisplayFormat.Money(_snapshot.Stats.CostPerMinuteUsd)">@DisplayFormat.Money(_snapshot.Stats.CostPerMinuteUsd)<small>/ min</small></strong><p>@DisplayFormat.Money(_snapshot.Stats.CostPerHourUsd) per active hour</p></article>
+        <article><span>Estimated spend</span><strong title="@DisplayFormat.Money(_snapshot.Stats.EstimatedSpendUsd)">@DisplayFormat.Money(_snapshot.Stats.EstimatedSpendUsd)</strong><p>@DisplayFormat.Money(_snapshot.Stats.EstimatedSpendAtExhaustionUsd) by exhaustion</p></article>
+        <article><span>Cache hit rate</span><strong>@DisplayFormat.Number(_snapshot.Stats.CacheHitPercent, 1)<small>%</small></strong><p>@DisplayFormat.Compact(_snapshot.Stats.CachedTokens) cached · @DisplayFormat.Number(_snapshot.Stats.CacheBreaks) breaks</p></article>
+        <article><span>Projected exhaustion</span><strong class="time-value">@Exhaustion(_snapshot.Stats.EstimatedExhaustionAt)</strong><p>@_snapshot.Stats.ForecastNote</p></article>
+    </section>
+
+    <div class="content-grid">
+        <section class="panel sessions-panel">
+            <div class="panel-heading"><div><span class="eyebrow">LIVE WORK</span><h2>Sessions</h2></div><a href="/sessions">View all</a></div>
+            <div class="session-list">
+                @foreach (var session in _snapshot.Sessions.Take(6))
+                {
+                    <a class="session-row" href="@($"/sessions/{Uri.EscapeDataString(session.Id)}")">
+                        <span class="provider-dot @session.Provider.ToString().ToLowerInvariant()"></span>
+                        <div class="session-main"><strong>@session.ProjectAlias</strong><span>@session.Agent · @session.Model</span></div>
+                        <div class="session-activity"><span class="state @session.State.ToString().ToLowerInvariant()">@session.State</span><small>@Ago(session.LastActivityAt)</small></div>
+                        <div class="session-numbers"><strong>@DisplayFormat.Compact(session.Tokens.Total)</strong><small>@DisplayFormat.Money(session.EstimatedCostUsd)</small></div>
+                        <span class="chevron">›</span>
+                    </a>
+                }
+            </div>
+        </section>
+        <section class="panel pulse-panel">
+            <div class="panel-heading"><div><span class="eyebrow">SYSTEM PULSE</span><h2>Today</h2></div><span class="tiny-live"><i></i>live</span></div>
+            <div class="pulse-chart" aria-label="Example activity sparkline">
+                <span style="--h:28%"></span><span style="--h:34%"></span><span style="--h:24%"></span><span style="--h:48%"></span><span style="--h:69%"></span><span style="--h:44%"></span><span style="--h:78%"></span><span style="--h:61%"></span><span style="--h:88%"></span><span style="--h:57%"></span><span style="--h:73%"></span><span style="--h:49%"></span>
+            </div>
+            <div class="pulse-facts"><div><span>Sessions</span><strong>@DisplayFormat.Number(_snapshot.Stats.SessionCount)</strong></div><div><span>Agents</span><strong>@DisplayFormat.Number(_snapshot.Stats.AgentCount)</strong></div><div><span>Projects</span><strong>@DisplayFormat.Number(_snapshot.Stats.ProjectCount)</strong></div><div><span>Pending gates</span><strong>@DisplayFormat.Number(_snapshot.Gates.Count(x => x.State == GateState.Pending))</strong></div></div>
+        </section>
+    </div>
+
+    @if (_snapshot.Gates.FirstOrDefault(x => x.State == GateState.Pending) is { } gate)
+    {
+        <aside class="gate-banner">
+            <div class="gate-icon">!</div>
+            <div><span class="eyebrow">APPROVAL REQUIRED · @gate.Provider</span><h3>@gate.ProjectAlias wants to run @gate.ToolName</h3><code>@gate.Summary</code><p>@gate.Reason</p></div>
+            <div class="gate-actions"><button class="button danger" @onclick="() => Decide(gate.Id, PolicyDecision.Deny)">Deny</button><button class="button primary" @onclick="() => Decide(gate.Id, PolicyDecision.Allow)">Allow once</button><small>@Countdown(gate.ExpiresAt)</small></div>
+        </aside>
+    }
+}
+
+@code {
+    private DashboardSnapshot? _snapshot;
+    private readonly CancellationTokenSource _stop = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Refresh();
+        _ = PollAsync(_stop.Token);
+    }
+
+    private async Task PollAsync(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+        try { while (await timer.WaitForNextTickAsync(token)) { await Refresh(); await InvokeAsync(StateHasChanged); } }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task Refresh()
+    {
+        try { _snapshot = await Api.SnapshotAsync(_stop.Token); } catch when (!_stop.IsCancellationRequested) { }
+    }
+
+    private async Task Decide(string id, PolicyDecision decision) { await Api.DecideAsync(id, decision); await Refresh(); }
+    private static string ProviderName(AgentProvider p) => p == AgentProvider.Copilot ? "GitHub Copilot" : p.ToString();
+    private static string ProviderGlyph(AgentProvider p) => p switch { AgentProvider.Claude => "A", AgentProvider.Codex => "◎", _ => "◆" };
+    private static string Ago(DateTimeOffset at)
+    {
+        var age = DateTimeOffset.UtcNow - at;
+        if (age < TimeSpan.Zero) return "just now";
+        return age.TotalSeconds < 15 ? "just now" : age.TotalMinutes < 1 ? $"{Math.Max(1, age.Seconds)}s ago" : age.TotalHours < 1 ? $"{(int)age.TotalMinutes}m ago" : $"{(int)age.TotalHours}h ago";
+    }
+    private static string ResetText(UsageWindow item)
+    {
+        var reset = item.ResetsAt is null ? item.Source.ToString() : ResetIn(item.ResetsAt.Value);
+        return item.OverageUsd is > 0 ? $"{reset} · {DisplayFormat.Money(item.OverageUsd.Value)} overage" : reset;
+    }
+    private static string ResetIn(DateTimeOffset at)
+    {
+        var left = at - DateTimeOffset.UtcNow;
+        if (left <= TimeSpan.Zero) return "reset due";
+        var exact = at.ToLocalTime().ToString("MMM d, h:mm tt");
+        if (left < TimeSpan.FromHours(1)) return $"resets in {Math.Max(1, (int)Math.Ceiling(left.TotalMinutes))}m · {exact}";
+        if (left < TimeSpan.FromDays(1)) return $"resets in {(int)left.TotalHours}h {left.Minutes}m · {exact}";
+        return $"resets in {(int)left.TotalDays}d {left.Hours}h · {exact}";
+    }
+    private static string Exhaustion(DateTimeOffset? at) => at is null ? "Not enough data" : at.Value.ToLocalTime().ToString("h:mm tt");
+    private static string Countdown(DateTimeOffset at) { var left = at - DateTimeOffset.UtcNow; return left <= TimeSpan.Zero ? "timed out" : $"{Math.Ceiling(left.TotalSeconds)}s remaining"; }
+    public ValueTask DisposeAsync() { _stop.Cancel(); _stop.Dispose(); return ValueTask.CompletedTask; }
+}

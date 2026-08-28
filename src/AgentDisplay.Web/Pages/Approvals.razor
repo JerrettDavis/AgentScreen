@@ -1,0 +1,41 @@
+@page "/approvals"
+@implements IAsyncDisposable
+@inject ApiClient Api
+<PageTitle>Approvals · AgentScreen</PageTitle>
+<header class="page-header compact"><div><span class="eyebrow">DETERMINISTIC POLICY GATES</span><h1>Approvals</h1><p>Review sensitive operations without exposing full transcripts to the display.</p></div></header>
+@if (_snapshot is null) { <section class="page-loading"><span></span><p>Loading gates…</p></section> }
+else
+{
+    var pending = _snapshot.Gates.Where(x => x.State == GateState.Pending).ToArray();
+    @if (pending.Length == 0)
+    {
+        <section class="empty-state panel"><div class="empty-icon">✓</div><span class="eyebrow">QUEUE CLEAR</span><h2>No action is waiting.</h2><p>AgentScreen will hold matching tool calls here until an explicit allow or deny decision is returned.</p></section>
+    }
+    @foreach (var gate in pending)
+    {
+        <article class="approval-card">
+            <header><div class="gate-icon">!</div><div><span class="eyebrow">@gate.Provider · @gate.ProjectAlias</span><h2>@gate.ToolName needs approval</h2></div><span class="countdown">@Seconds(gate.ExpiresAt)s</span></header>
+            <div class="approval-command"><span>Redacted request</span><code>@gate.Summary</code></div>
+            <p class="approval-reason">@gate.Reason</p>
+            <footer><div><small>Session</small><strong>@gate.SessionId</strong></div><div><small>Received</small><strong>@gate.CreatedAt.ToLocalTime().ToString("h:mm:ss tt")</strong></div><div class="approval-actions"><button class="button danger" disabled="@_busy" @onclick="() => Decide(gate.Id, PolicyDecision.Deny)">Deny</button><button class="button primary" disabled="@_busy" @onclick="() => Decide(gate.Id, PolicyDecision.Allow)">Allow once</button></div></footer>
+        </article>
+    }
+    <section class="panel history-panel">
+        <div class="panel-heading"><div><span class="eyebrow">LAST 24 HOURS</span><h2>Decision history</h2></div></div>
+        @foreach (var gate in _snapshot.Gates.Where(x => x.State != GateState.Pending).Take(20))
+        {
+            <div class="history-row"><span class="history-state @gate.State.ToString().ToLowerInvariant()">@gate.State</span><div><strong>@gate.ProjectAlias · @gate.ToolName</strong><small>@gate.Summary</small></div><time>@(gate.DecidedAt?.ToLocalTime().ToString("h:mm tt") ?? "—")</time></div>
+        }
+    </section>
+}
+@code {
+    private DashboardSnapshot? _snapshot;
+    private bool _busy;
+    private readonly CancellationTokenSource _stop = new();
+    protected override async Task OnInitializedAsync() { await Refresh(); _ = Poll(_stop.Token); }
+    private async Task Poll(CancellationToken token) { using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1)); try { while (await timer.WaitForNextTickAsync(token)) { await Refresh(); await InvokeAsync(StateHasChanged); } } catch (OperationCanceledException) { } }
+    private async Task Refresh() { try { _snapshot = await Api.SnapshotAsync(_stop.Token); } catch when (!_stop.IsCancellationRequested) { } }
+    private async Task Decide(string id, PolicyDecision decision) { _busy = true; try { await Api.DecideAsync(id, decision); await Refresh(); } finally { _busy = false; } }
+    private static int Seconds(DateTimeOffset at) => Math.Max(0, (int)Math.Ceiling((at - DateTimeOffset.UtcNow).TotalSeconds));
+    public ValueTask DisposeAsync() { _stop.Cancel(); _stop.Dispose(); return ValueTask.CompletedTask; }
+}

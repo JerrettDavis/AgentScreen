@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/*.csproj'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m pip install --disable-pip-version-check -r requirements-dev.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: npm test
+      - run: bash scripts/test-firmware-model.sh
+      - run: dotnet restore AgentDisplay.slnx
+      - run: dotnet test AgentDisplay.slnx --configuration Release --no-restore --nologo --collect:"XPlat Code Coverage"
+      - run: dotnet publish src/AgentDisplay.Host/AgentDisplay.Host.csproj --configuration Release --no-restore --output artifacts/host
+      - name: Browser smoke test
+        shell: bash
+        run: |
+          dotnet artifacts/host/AgentDisplay.Host.dll --demo --urls http://127.0.0.1:5277 > /tmp/agentscreen-host.log 2>&1 &
+          host_pid=$!
+          trap 'kill $host_pid' EXIT
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:5277/devices > /dev/null && break
+            sleep 1
+          done
+          python tests/browser/devices_smoke.py
+      - run: python scripts/validate.py --skip-dotnet --skip-pio
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: agentscreen-validation-report
+          path: validation-report.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: agentscreen-host-linux
+          path: artifacts/host
+
+  host-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: npm test
+      - run: dotnet test AgentDisplay.slnx --configuration Release --nologo
+
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m pip install --disable-pip-version-check platformio
+      - run: pio test -d firmware/e32r40t -e native
+      - run: pio run -d firmware/e32r40t -e e32r40t
+      - uses: actions/upload-artifact@v7
+        with:
+          name: agentscreen-e32r40t-firmware
+          path: |
+            firmware/e32r40t/.pio/build/e32r40t/firmware.bin
+            firmware/e32r40t/.pio/build/e32r40t/firmware.elf
+            firmware/e32r40t/.pio/build/e32r40t/partitions.bin
+
+  workflow-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: raven-actions/actionlint@v2

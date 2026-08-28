@@ -1,0 +1,27 @@
+@inherits LayoutComponentBase
+<div class="app-shell">
+    <aside class="sidebar">
+        <a class="brand" href="/" aria-label="AgentScreen home">
+            <span class="brand-mark"><i></i><i></i><i></i></span>
+            <span><strong>Agent</strong>Screen<small>local operations console</small></span>
+        </a>
+        <nav class="desktop-nav" aria-label="Primary">
+            <NavLink href="/" Match="NavLinkMatch.All"><span>⌁</span>Overview</NavLink>
+            <NavLink href="/sessions"><span>◫</span>Sessions</NavLink>
+            <NavLink href="/approvals"><span>◇</span>Approvals</NavLink>
+            <NavLink href="/devices"><span>▣</span>Devices</NavLink>
+            <NavLink href="/settings"><span>⚙</span>Settings</NavLink>
+        </nav>
+        <div class="local-note"><span class="pulse-dot"></span><div><strong>Local relay</strong><small>Secrets stay on this machine</small></div></div>
+    </aside>
+    <main class="page-shell">
+        @Body
+    </main>
+    <nav class="mobile-nav" aria-label="Mobile primary">
+        <NavLink href="/" Match="NavLinkMatch.All"><span>⌁</span><small>Overview</small></NavLink>
+        <NavLink href="/sessions"><span>◫</span><small>Sessions</small></NavLink>
+        <NavLink href="/approvals"><span>◇</span><small>Gates</small></NavLink>
+        <NavLink href="/devices"><span>▣</span><small>Devices</small></NavLink>
+        <NavLink href="/settings"><span>⚙</span><small>Settings</small></NavLink>
+    </nav>
+</div>

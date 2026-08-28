@@ -1,0 +1,24 @@
+name: Stale issues
+
+on:
+  schedule:
+    - cron: "23 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v10
+        with:
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          days-before-pr-stale: 30
+          days-before-pr-close: 14
+          stale-issue-message: This issue has been inactive for 60 days. Add current reproduction details if it is still relevant.
+          stale-pr-message: This pull request has been inactive for 30 days. Please rebase or comment if work is continuing.
+          exempt-issue-labels: security,pinned

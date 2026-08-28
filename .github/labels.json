@@ -1,0 +1,22 @@
+[
+  {"name":"area: core","color":"5319e7","description":"Core domain and shared contracts"},
+  {"name":"area: firmware","color":"0e8a16","description":"ESP32 firmware and device UI"},
+  {"name":"area: host","color":"1d76db","description":"ASP.NET Core host and local collectors"},
+  {"name":"area: integrations","color":"006b75","description":"Agent hooks and provider integrations"},
+  {"name":"area: web","color":"512bd4","description":"Blazor PWA and browser bridge"},
+  {"name":"bug","color":"d73a4a","description":"Something is not working"},
+  {"name":"ci","color":"bfdadc","description":"Continuous integration and delivery"},
+  {"name":"dependencies","color":"0366d6","description":"Dependency updates"},
+  {"name":"documentation","color":"0075ca","description":"Documentation improvements"},
+  {"name":"dotnet","color":"512bd4","description":".NET dependency or tooling change"},
+  {"name":"duplicate","color":"cfd3d7","description":"Already reported"},
+  {"name":"enhancement","color":"a2eeef","description":"New feature or improvement"},
+  {"name":"good first issue","color":"7057ff","description":"Approachable for a first contribution"},
+  {"name":"help wanted","color":"008672","description":"Community help is welcome"},
+  {"name":"invalid","color":"e4e669","description":"Not enough information or out of scope"},
+  {"name":"javascript","color":"f1e05a","description":"JavaScript dependency or tooling change"},
+  {"name":"question","color":"d876e3","description":"Further information is requested"},
+  {"name":"security","color":"b60205","description":"Security-sensitive change"},
+  {"name":"tests","color":"fbca04","description":"Test coverage and validation"},
+  {"name":"wontfix","color":"ffffff","description":"Not currently planned"}
+]

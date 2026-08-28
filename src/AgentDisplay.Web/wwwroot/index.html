@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#080b12" />
+  <meta name="description" content="AgentScreen local operations console for coding agents and its ESP32 companion display." />
+  <base href="/" />
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>AgentScreen</title>
+</head>
+<body>
+  <div id="app">
+    <div class="boot-screen"><span class="brand-mark large"><i></i><i></i><i></i></span><strong>AgentScreen</strong><small>Connecting to the local relay…</small></div>
+  </div>
+  <div id="blazor-error-ui">AgentScreen encountered an error. <a href="." class="reload">Reload</a><a class="dismiss">×</a></div>
+  <script src="js/agentdisplay.js"></script>
+  <script src="_framework/blazor.webassembly.js"></script>
+  <script>navigator.serviceWorker?.register('service-worker.js', { updateViaCache: 'none' });</script>
+</body>
+</html>

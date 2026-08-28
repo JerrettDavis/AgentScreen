@@ -1,0 +1,34 @@
+@page "/sessions/{Id}"
+@inject ApiClient Api
+@inject NavigationManager Navigation
+<PageTitle>Session · AgentScreen</PageTitle>
+@if (_session is null) { <section class="page-loading"><span></span><p>Loading session…</p></section> }
+else
+{
+    <header class="page-header compact session-detail-head">
+        <div><button class="back-link" @onclick="Back">‹ Sessions</button><span class="eyebrow">@_session.Provider · @_session.State</span><h1>@_session.ProjectAlias</h1><p>@_session.Agent · @_session.Model · started @_session.StartedAt.ToLocalTime().ToString("MMM d, h:mm tt")</p></div>
+        <div class="session-total"><span>API-equivalent</span><strong title="@DisplayFormat.Money(_session.EstimatedCostUsd, 3)">@DisplayFormat.Money(_session.EstimatedCostUsd, 3)</strong><small>@DisplayFormat.Compact(_session.Tokens.Total) observed tokens</small></div>
+    </header>
+    <section class="detail-stats">
+        <article><span>Input</span><strong>@DisplayFormat.Compact(_session.Tokens.Input)</strong></article><article><span>Output</span><strong>@DisplayFormat.Compact(_session.Tokens.Output)</strong></article><article><span>Cache read</span><strong>@DisplayFormat.Compact(_session.Tokens.CacheRead)</strong></article><article><span>Cache write</span><strong>@DisplayFormat.Compact(_session.Tokens.CacheWrite)</strong></article>
+    </section>
+    <section class="panel timeline-panel">
+        <div class="panel-heading"><div><span class="eyebrow">REDACTED LOCAL VIEW</span><h2>Turn timeline</h2></div><span>@_session.Turns.Count turns</span></div>
+        <div class="timeline">
+            @foreach (var turn in _session.Turns.OrderByDescending(x => x.At))
+            {
+                <article class="turn @turn.Kind.ToString().ToLowerInvariant()">
+                    <span class="turn-mark">@TurnGlyph(turn.Kind)</span>
+                    <div class="turn-body"><header><strong>@turn.Kind</strong>@if (turn.ToolName is not null) { <code>@turn.ToolName</code> }<time>@turn.At.ToLocalTime().ToString("h:mm:ss tt")</time></header><p>@turn.Summary</p><footer><span>@DisplayFormat.Compact(turn.Tokens.Total) tokens</span><span>@DisplayFormat.Compact(turn.Tokens.CacheRead) cache</span><span>@DisplayFormat.Money(turn.EstimatedCostUsd, 4)</span></footer></div>
+                </article>
+            }
+        </div>
+    </section>
+}
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+    private AgentSession? _session;
+    protected override async Task OnParametersSetAsync() => _session = await Api.SessionAsync(Id);
+    private void Back() => Navigation.NavigateTo("/sessions");
+    private static string TurnGlyph(TurnKind kind) => kind switch { TurnKind.User => "U", TurnKind.Assistant => "A", TurnKind.Tool => "›_", TurnKind.Result => "✓", _ => "·" };
+}

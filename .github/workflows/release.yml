@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            runtime: win-x64
+          - os: ubuntu-latest
+            runtime: linux-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - name: Publish host
+        run: dotnet publish src/AgentDisplay.Host/AgentDisplay.Host.csproj --configuration Release --runtime ${{ matrix.runtime }} --self-contained true --output artifacts/AgentScreen-${{ matrix.runtime }}
+      - name: Package Windows host
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path artifacts/AgentScreen-${{ matrix.runtime }}/* -DestinationPath artifacts/AgentScreen-${{ matrix.runtime }}.zip
+      - name: Package Linux host
+        if: runner.os == 'Linux'
+        run: tar -czf artifacts/AgentScreen-${{ matrix.runtime }}.tar.gz -C artifacts/AgentScreen-${{ matrix.runtime }} .
+      - uses: actions/upload-artifact@v7
+        with:
+          name: AgentScreen-${{ matrix.runtime }}
+          path: artifacts/AgentScreen-${{ matrix.runtime }}.*
+
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: python -m pip install platformio==6.1.19
+      - run: pio run -d firmware/e32r40t -e e32r40t
+      - run: |
+          mkdir -p artifacts/AgentScreen-e32r40t
+          cp firmware/e32r40t/.pio/build/e32r40t/{firmware.bin,bootloader.bin,partitions.bin} artifacts/AgentScreen-e32r40t/
+          cp LICENSE THIRD_PARTY_NOTICES.md artifacts/AgentScreen-e32r40t/
+          tar -czf artifacts/AgentScreen-e32r40t.tar.gz -C artifacts/AgentScreen-e32r40t .
+      - uses: actions/upload-artifact@v7
+        with:
+          name: AgentScreen-e32r40t
+          path: artifacts/AgentScreen-e32r40t.tar.gz
+
+  publish:
+    needs: [build, firmware]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: release
+          merge-multiple: true
+      - name: Create checksums
+        run: cd release && sha256sum * > SHA256SUMS
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: release/*
