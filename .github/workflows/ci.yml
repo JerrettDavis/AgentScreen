@@ -39,7 +39,7 @@ jobs:
           dotnet artifacts/host/AgentDisplay.Host.dll --demo --urls http://127.0.0.1:5277 > /tmp/agentscreen-host.log 2>&1 &
           host_pid=$!
           trap 'kill $host_pid' EXIT
-          for attempt in {1..30}; do
+          for _attempt in {1..30}; do
             curl --fail --silent http://127.0.0.1:5277/devices > /dev/null && break
             sleep 1
           done
