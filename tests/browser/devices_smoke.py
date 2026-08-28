@@ -26,7 +26,7 @@ def main() -> None:
     executable = browser_executable()
 
     with sync_playwright() as playwright:
-        launch_options = {"headless": True}
+        launch_options = {"headless": True, "args": ["--no-proxy-server"]}
         if executable:
             launch_options["executable_path"] = executable
         browser = playwright.chromium.launch(**launch_options)

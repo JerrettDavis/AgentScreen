@@ -39,11 +39,22 @@ jobs:
           dotnet artifacts/host/AgentDisplay.Host.dll --demo --urls http://127.0.0.1:5277 > /tmp/agentscreen-host.log 2>&1 &
           host_pid=$!
           trap 'kill $host_pid' EXIT
+          ready=false
           for _attempt in {1..30}; do
-            curl --fail --silent http://127.0.0.1:5277/devices > /dev/null && break
+            if curl --fail --silent http://127.0.0.1:5277/devices > /dev/null; then
+              ready=true
+              break
+            fi
             sleep 1
           done
-          python tests/browser/devices_smoke.py
+          if [[ "$ready" != true ]]; then
+            cat /tmp/agentscreen-host.log
+            exit 1
+          fi
+          if ! python tests/browser/devices_smoke.py; then
+            cat /tmp/agentscreen-host.log
+            exit 1
+          fi
       - run: python scripts/validate.py --skip-dotnet --skip-pio
       - uses: actions/upload-artifact@v7
         if: always()
