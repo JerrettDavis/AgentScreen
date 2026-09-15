@@ -7,7 +7,7 @@
     <ProjectReference Include="../AgentDisplay.Contracts/AgentDisplay.Contracts.csproj" />
     <ProjectReference Include="../AgentDisplay.Core/AgentDisplay.Core.csproj" />
     <ProjectReference Include="../AgentDisplay.Web/AgentDisplay.Web.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.12" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="../../integrations/hooks/**" Link="integrations/hooks/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
